@@ -1,1 +1,1 @@
-# rshiny_freecodecamp
+# Solar Forecast
