@@ -1,15 +1,12 @@
 ############################################
-# Data Professor                           #
-# http://youtube.com/dataprofessor         #
-# http://github.com/dataprofessor          #
-# http://facebook.com/dataprofessor        #
-# https://www.instagram.com/data.professor #
+# Solar Forecasting                        #
 ############################################
 
 # Import libraries
 library(shiny)
+library(shinythemes)
 library(data.table)
-library(randomForest)
+library(e1071)
 
 # Read in the RF model
 model <- readRDS("model.rds")
@@ -23,37 +20,46 @@ TrainSet <- TrainSet[,-1]
 # User interface                   #
 ####################################
 
-ui <- pageWithSidebar(
-  
-  # Page header
-  headerPanel('Iris Predictor'),
-  
-  # Input values
-  sidebarPanel(
-    HTML("<h3>Input parameters</h4>"),
-    sliderInput("Sepal.Length", label = "Sepal Length", value = 5.0,
-                min = min(TrainSet$Sepal.Length),
-                max = max(TrainSet$Sepal.Length)
-    ),
-    sliderInput("Sepal.Width", label = "Sepal Width", value = 3.6,
-                min = min(TrainSet$Sepal.Width),
-                max = max(TrainSet$Sepal.Width)),
-    sliderInput("Petal.Length", label = "Petal Length", value = 1.4,
-                min = min(TrainSet$Petal.Length),
-                max = max(TrainSet$Petal.Length)),
-    sliderInput("Petal.Width", label = "Petal Width", value = 0.2,
-                min = min(TrainSet$Petal.Width),
-                max = max(TrainSet$Petal.Width)),
-    
-    actionButton("submitbutton", "Submit", class = "btn btn-primary")
-  ),
-  
-  mainPanel(
-    tags$label(h3('Status/Output')), # Status/Output Text Box
-    verbatimTextOutput('contents'),
-    tableOutput('tabledata') # Prediction results table
-    
-  )
+ui <- fluidPage(theme = shinytheme("sandstone"),
+                navbarPage("WQD7001 - Group 11 Project App",
+                           
+                           tabPanel("Home",
+                                    # Page header
+                                    headerPanel('Solar Radiation Forecasting using SVM'),
+                                    # Input values
+                                    sidebarPanel(
+                                      HTML("<h3>Input meteorological parameters</h4>"),
+                                      sliderInput("temperature", label = "24 Hour Mean Temperature (°C)", value = 30.5,
+                                                  min = 0,
+                                                  max = 100),
+                                      sliderInput("humidity", label = "24 Hour Mean Relative Humidity (%)", value = 75.5,
+                                                  min = 0,
+                                                  max = 100),
+                                      sliderInput("wind", label = "24 Hour Mean Wind (m/s)", value = 1.5,
+                                                  min = min(TrainSet$wind),
+                                                  max = max(TrainSet$wind)),
+                                      sliderInput("msl_pressure", label = "Mean MSL Pressure(Hpa)", value = 1010.8,
+                                                  min = min(TrainSet$msl_pressure),
+                                                  max = max(TrainSet$msl_pressure)),
+                                      
+                                      actionButton("submitbutton", "Submit", class = "btn btn-primary")
+                                    ),
+                                    
+                                    mainPanel(
+                                      tags$label(h3('Forecast Status & Output')), # Status/Output Text Box
+                                      verbatimTextOutput('contents'),
+                                      tableOutput('tabledata') # Prediction results table
+                                    )
+                                    
+                           ),
+                           
+                           tabPanel("About", 
+                                    titlePanel("About"), 
+                                    div(includeMarkdown("about.md"), 
+                                        align="justify")
+                           )
+                           
+                )
 )
 
 ####################################
@@ -66,34 +72,33 @@ server<- function(input, output, session) {
   datasetInput <- reactive({  
     
     df <- data.frame(
-      Name = c("Sepal Length",
-               "Sepal Width",
-               "Petal Length",
-               "Petal Width"),
-      Value = as.character(c(input$Sepal.Length,
-                             input$Sepal.Width,
-                             input$Petal.Length,
-                             input$Petal.Width)),
+      Name = c("temperature",
+               "humidity",
+               "wind",
+               "msl_pressure"),
+      Value = as.character(c(input$temperature,
+                             input$humidity,
+                             input$wind,
+                             input$msl_pressure)),
       stringsAsFactors = FALSE)
     
-    Species <- 0
-    df <- rbind(df, Species)
+    solar_radiation <- 0
+    df <- rbind(df, solar_radiation)
     input <- transpose(df)
     write.table(input,"input.csv", sep=",", quote = FALSE, row.names = FALSE, col.names = FALSE)
-    
     test <- read.csv(paste("input", ".csv", sep=""), header = TRUE)
     
-    Output <- data.frame(Prediction=predict(model,test), round(predict(model,test,type="prob"), 3))
-    print(Output)
+    Output <- data.frame(Solar_Radiation_Prediction=predict(model,test), round(predict(model,test,type="prob"), 3))
+    print(Output)['Solar_Radiation_Prediction']
     
   })
   
   # Status/Output Text Box
   output$contents <- renderPrint({
     if (input$submitbutton>0) { 
-      isolate("Calculation complete.") 
+      isolate("Solar Forecast Completed. Below the prediction of solar radiation (MJm-2): ") 
     } else {
-      return("Server is ready for calculation.")
+      return("Server is ready for forecast.")
     }
   })
   
