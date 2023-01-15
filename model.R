@@ -8,7 +8,7 @@ library(e1071)
 library(caret)
 library(data.table)
 
-# Importing the Iris data set
+# Importing the solar data set
 TrainSet <- read.csv(text = getURL("https://raw.githubusercontent.com/auliantya/solarprediction/master/training.csv"),header = TRUE)
 TrainSet <- TrainSet[,-1]
 
